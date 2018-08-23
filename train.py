@@ -12,16 +12,32 @@ import torch.backends.cudnn
 
 from models import UNet11, LinkNet34, UNet, UNet16, AlbuNet
 from loss import LossBinary, LossMulti
-from dataset import RoboticsDataset
+from dataset import CustomDataset
 import utils
 
-from prepare_train_val import get_split
+from prepare_data import get_split
+
+from torchvision.transforms import ToTensor
+
+from dataset import RandomCrop, Rescale
 
 from albumentations import (
     HorizontalFlip,
     VerticalFlip,
     Normalize,
-    Compose
+    Compose,
+    RandomBrightness,
+    OneOf,
+    IAAAdditiveGaussianNoise,
+    GaussNoise,
+    OpticalDistortion,
+    HueSaturationValue,
+    GridDistortion,
+    IAAPiecewiseAffine,
+    IAASharpen,
+    IAAEmboss,
+    RandomContrast,
+    RandomBrightness
 )
 
 
@@ -70,8 +86,6 @@ def main():
         else:
             device_ids = None
         model = nn.DataParallel(model, device_ids=device_ids).cuda()
-    else:
-        raise SystemError('GPU device not found')
 
     if args.type == 'binary':
         loss = LossBinary(jaccard_weight=args.jaccard_weight)
@@ -82,26 +96,46 @@ def main():
 
     def make_loader(file_names, shuffle=False, transform=None, problem_type='binary', batch_size=1):
         return DataLoader(
-            dataset=RoboticsDataset(file_names, transform=transform, problem_type=problem_type),
+            dataset=CustomDataset(file_names, transform=transform), 
             shuffle=shuffle,
             num_workers=args.workers,
             batch_size=batch_size,
             pin_memory=torch.cuda.is_available()
         )
 
-    train_file_names, val_file_names = get_split(args.fold)
+    train_file_names, val_file_names = get_split()
 
     print('num train = {}, num_val = {}'.format(len(train_file_names), len(val_file_names)))
 
     def train_transform(p=1):
         return Compose([
-            VerticalFlip(p=0.5),
+            Rescale(256),
+            RandomCrop(256),
+            RandomBrightness(0.3),
+            OneOf([
+                IAAAdditiveGaussianNoise(),
+                GaussNoise(),
+            ], p=0.3),
+            OneOf([
+                OpticalDistortion(p=0.3),
+                GridDistortion(p=.1),
+                IAAPiecewiseAffine(p=0.3),
+            ], p=0.1),
+            OneOf([
+                IAASharpen(),
+                IAAEmboss(),
+                RandomContrast(),
+                RandomBrightness(),
+            ], p=0.15),
+            HueSaturationValue(p=0.2),
             HorizontalFlip(p=0.5),
-            Normalize(p=1)
+            Normalize(p=1),
         ], p=p)
 
     def val_transform(p=1):
         return Compose([
+            Rescale(256),
+            RandomCrop(256),
             Normalize(p=1)
         ], p=p)
 

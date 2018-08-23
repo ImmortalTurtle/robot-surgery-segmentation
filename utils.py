@@ -13,7 +13,7 @@ def cuda(x):
     return x.cuda(async=True) if torch.cuda.is_available() else x
 
 
-def write_event(log, step, **data):
+def write_event(log, step: int, **data):
     data['step'] = step
     data['dt'] = datetime.now().isoformat()
     log.write(json.dumps(data, sort_keys=True))
@@ -28,7 +28,7 @@ def train(args, model, criterion, train_loader, valid_loader, validation, init_o
     optimizer = init_optimizer(lr)
 
     root = Path(args.root)
-    model_path = root / 'model_{fold}.pt'.format(fold=fold)
+    model_path = root / 'model.pt'
     if model_path.exists():
         state = torch.load(str(model_path))
         epoch = state['epoch']
@@ -46,7 +46,7 @@ def train(args, model, criterion, train_loader, valid_loader, validation, init_o
     }, str(model_path))
 
     report_each = 10
-    log = root.joinpath('train_{fold}.log'.format(fold=fold)).open('at', encoding='utf8')
+    log = root.joinpath('train.log').open('at', encoding='utf8')
     valid_losses = []
     for epoch in range(epoch, n_epochs + 1):
         model.train()
