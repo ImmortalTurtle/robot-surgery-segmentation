@@ -15,7 +15,7 @@ from loss import LossBinary, LossMulti
 from dataset import CustomDataset
 import utils
 
-from prepare_data import get_split
+from prepare_data import get_split, SIZE
 
 from torchvision.transforms import ToTensor
 
@@ -109,33 +109,33 @@ def main():
 
     def train_transform(p=1):
         return Compose([
-            Rescale(256),
-            RandomCrop(256),
-            RandomBrightness(0.3),
+#            Rescale(SIZE),
+            RandomCrop(SIZE),
+            RandomBrightness(0.2),
             OneOf([
                 IAAAdditiveGaussianNoise(),
                 GaussNoise(),
-            ], p=0.3),
-            OneOf([
-                OpticalDistortion(p=0.3),
-                GridDistortion(p=.1),
-                IAAPiecewiseAffine(p=0.3),
-            ], p=0.1),
-            OneOf([
-                IAASharpen(),
-                IAAEmboss(),
-                RandomContrast(),
-                RandomBrightness(),
             ], p=0.15),
-            HueSaturationValue(p=0.2),
+#            OneOf([
+#                OpticalDistortion(p=0.3),
+#                GridDistortion(p=.1),
+#                IAAPiecewiseAffine(p=0.3),
+#            ], p=0.1),
+#            OneOf([
+#                IAASharpen(),
+#                IAAEmboss(),
+#                RandomContrast(),
+#                RandomBrightness(),
+#            ], p=0.15),
+            HueSaturationValue(p=0.15),
             HorizontalFlip(p=0.5),
             Normalize(p=1),
         ], p=p)
 
     def val_transform(p=1):
         return Compose([
-            Rescale(256),
-            RandomCrop(256),
+#            Rescale(256),
+            RandomCrop(SIZE),
             Normalize(p=1)
         ], p=p)
 

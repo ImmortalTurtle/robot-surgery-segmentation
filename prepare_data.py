@@ -1,5 +1,8 @@
+from pathlib import Path
+
 data_path = Path('data/')
 train_path = data_path / 'train'
+SIZE=480
 
 def get_split():
     train_path = data_path / 'train'
